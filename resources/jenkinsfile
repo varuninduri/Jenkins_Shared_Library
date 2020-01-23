@@ -1,0 +1,89 @@
+@Library('gs-shared-lib@master') _
+ 
+pipeline {
+    agent any
+    
+    
+    tools { 
+        maven 'Maven3' 
+        jdk 'Java8' 
+    }
+    
+    stages {
+        stage('Git Checkout') {
+            steps {
+            gitCheckout(
+                branch: "master",
+                url: "https://gs_mrt@bitbucket.org/gs_mrt/simple-java-maven-app.git"
+            )
+            }
+        }
+            
+        stage ('Initialize') {
+            steps {
+                
+                bat label: '', script: 'echo "PATH = ${PATH}"'   
+                //steps.bat    echo "M2_HOME = ${M2_HOME}"
+                 
+            }
+        }
+        
+        stage ('Clean') {
+            steps {
+                bat label: '', script: 'mvn clean'
+                
+            }
+        }
+
+        stage ('Build') {
+            steps {
+                bat label: '', script: 'mvn -Dmaven.test.failure.ignore=true install'
+                //steps.bat echo 'This is a maven Install.'
+            }
+        }
+        
+        stage('Test') {
+            steps {
+            bat script: 'mvn test'
+            }
+            post {
+                always {
+                    junit 'target/surefire-reports/*.xml'
+                }
+            }
+        }
+        
+        stage('Code Coverage'){
+            steps {
+            jacoco()
+            }
+        }
+        
+      stage("SonarQube Scan") {
+            steps {
+              withSonarQubeEnv('sonarqube') {
+                bat script: 'mvn sonar:sonar'
+              }
+            }
+          }
+          
+      stage("Quality Gate") {
+        steps {
+          timeout(time: 1, unit: 'HOURS') {
+            waitForQualityGate abortPipeline: true
+          }
+        }
+      }
+      
+      stage("Nexus Deploy") {
+      
+            steps {
+              	bat script: 'mvn --batch-mode release:update-versions -DautoVersionSubmodules=true -DdevelopmentVersion=1.2'
+                bat script: 'mvn deploy:deploy-file -DgeneratePom=false -DrepositoryId=Nexus.Maven2 -Durl=http://localhost:8081/repository/maven-snapshots/ -DpomFile=pom.xml -Dfile=target/my-app.jar'
+              
+            }
+          }  
+        
+    
+    }
+}

@@ -1,156 +1,164 @@
-import com.abnamro.stpl.java.Git
-import com.abnamro.stpl.java.SonarQube
-import com.abnamro.stpl.java.model.JavaPipelineInfo
-import com.abnamro.stpl.java.MavenBuild
-import com.abnamro.stpl.java.model.MavenBuildInfo
-import com.abnamro.stpl.summary.ImpactfulAction
-import com.abnamro.stpl.summary.PipelineSummary
-import com.abnamro.stpl.summary.SkippedStep
-import com.abnamro.stpl.util.Maven
-import com.abnamro.stpl.util.Utilities
+import hudson.plugins.git.GitTool
+import org.gs.stpl.java.Git
+import org.gs.stpl.java.SonarQube
+import org.gs.stpl.java.model.JavaPipelineInfo
+import org.gs.stpl.java.MavenBuild
+import org.gs.stpl.java.model.MavenBuildInfo
+import org.gs.stpl.util.Maven
+import org.gs.stpl.util.Utilities
 
-def call(def buildSlaveLabel) {
-    node(buildSlaveLabel) {
+def call(def nodeParams) {
 
-        // VARS AND CLASSES
-        Utilities utilities = new Utilities(this)
-        PipelineSummary pipelineSummary = new PipelineSummary(this)
-        String scmType = getScmType(scm)
-        Git git = new Git(this)
-        git.git = tool name: 'GIT', type: 'hudson.plugins.git.GitTool'
+	node(nodeParams){
 
-        JavaPipelineInfo javaPipelineInfo = new JavaPipelineInfo(this, utilities, scmType)
-        javaPipelineInfo.isMainlineBuild = utilities.isMainLineBranch(scmType, env.BRANCH_NAME)
+		Utilities utilities = new Utilities(this)
+		String scmType = getScmType(scm)
+		Git git = new Git(this)
+		git.git = tool name: 'GIT', type: 'hudson.plugins.git.GitTool' //TODO: Tool name should be in properties file and match install tool name.
 
-        MavenBuild mavenBuild
-        Maven maven
-        MavenBuildInfo mavenBuildInfo
-        String tagName
 
-        // HOUSE KEEPING
-        currentBuild.description = "Build @${env.NODE_NAME}[${env.EXECUTOR_NUMBER}]"
-        deleteDir()
+		JavaPipelineInfo javaPipelineInfo = new JavaPipelineInfo(this, utilities, scmType)
+		javaPipelineInfo.isMainlineBuild = utilities.isMainLineBranch(scmType, env.BRANCH_NAME)
 
-        // THE PIPELINE
-        stage('Checkout') {
-            checkout scm
-        }
+		MavenBuild mavenBuild
+		Maven maven
+		MavenBuildInfo mavenBuildInfo
+		String tagName
 
-        try {
-            stage('Prepare Build Configuration') {
-                def propsFileName = 'jenkins.properties'
-                def propertiesFileExists = fileExists propsFileName
-                if (propertiesFileExists) {
-                    mavenBuildInfo = processJenkinsProperties(utilities, propsFileName)
-                    mavenBuildInfo.branchName = env.BRANCH_NAME
-                    mavenBuildInfo.pom = readMavenPom()
-                } else {
-                    error 'No jenkins.properties file found.'
-                }
+		// HOUSE KEEPING
+		currentBuild.description = "Build @${env.NODE_NAME}[${env.EXECUTOR_NUMBER}]"
+		deleteDir()
 
-                def jdkTool = utilities.getJDKTool(mavenBuildInfo.jdkVersion)
-                def mavenTool = utilities.getMavenTool(mavenBuildInfo.mavenVersion)
-                maven = new Maven(this, mavenTool, jdkTool)
-                mavenBuild = new MavenBuild(this, maven, mavenBuildInfo)
+		// THE PIPELINE
+		stage('Checkout') {
+			checkout scm
+		}
 
-                tagName = mavenBuild.createBuildTag(mavenBuildInfo.pom)
-                if (scmType == 'git') {
-                    git.cleanAndResetToBranch(mavenBuildInfo.branchName)
-                    git.createTag(tagName)
-                }
 
-                mavenBuild.prepareSettingsXml()
-            }
+		try {
 
-            stage('Build') {
-                if (javaPipelineInfo.isMainlineBuild) {
+			stage('Prepare Build Configuration') {
+				def propsFileName = 'jenkins.properties'
+				def propertiesFileExists = fileExists propsFileName
+				if (propertiesFileExists) {
+					mavenBuildInfo = processJenkinsProperties(utilities, propsFileName)
+					mavenBuildInfo.branchName = env.BRANCH_NAME
+					mavenBuildInfo.pom = readMavenPom()
+				} else {
+					error 'No jenkins.properties file found.'
+				}
 
-                    String version = mavenBuild.mavenBuild(mavenBuildInfo.pom)
-                    ImpactfulAction action = new ImpactfulAction('Maven release', "Released ${version}")
-                    pipelineSummary.addAction(action)
+				def jdkTool = utilities.getJDKTool(mavenBuildInfo.jdkVersion)
+				def mavenTool = utilities.getMavenTool(mavenBuildInfo.mavenVersion)
+				maven = new Maven(this, mavenTool, jdkTool)
+				mavenBuild = new MavenBuild(this, maven, mavenBuildInfo)
 
-                    if (mavenBuildInfo.builderCredentialsId && scmType == 'git') { // currently no other tag pushing supported
-                        git.pushTagToRepo(tagName, mavenBuildInfo.builderCredentialsId)
-                        ImpactfulAction impactfulAction = new ImpactfulAction('Push Tag', "Pushed tag ${tagName} to scm (${scmType}")
-                        pipelineSummary.addAction(impactfulAction)
-                    } else {
-                        println "****WARNING*******: Did not find env.builderCredentialsId, cannot push tag!"
-                        SkippedStep step = new SkippedStep("Push Tag", "Did not find builderCredentialsId, cannot push tag")
-                        pipelineSummary.addStep(step)
-                    }
-                } else { // Non-Mainline
-                    mavenBuild.mavenBranchBuild()
-                    SkippedStep step = new SkippedStep("Maven Build", "Its a non mainline branch (not Master or Trunk) so not doing a maven release")
-                    pipelineSummary.addStep(step)
-                }
+				tagName = mavenBuild.createBuildTag(mavenBuildInfo.pom)
+				if (scmType == 'git') {
+					git.cleanAndResetToBranch(mavenBuildInfo.branchName)
+					git.createTag(tagName)
+				}
 
-            }
+				//mavenBuild.prepareSettingsXml()
+			}
 
-            if (mavenBuildInfo.archiveFiles) {
-                stage('Archive') {
-                    utilities.archiveFiles(mavenBuildInfo.archiveFilesSet)
-                }
-            }
+			stage('Build') {
+				if (javaPipelineInfo.isMainlineBuild) {
 
-            if (javaPipelineInfo.isMainlineBuild) {
-                stage('Sonar') {
-                    SonarQube sonarQube = new SonarQube(this)
-                    sonarQube.sonarAnalysis(mavenBuildInfo, utilities)
-                }
-            } else { // Non-Mainline
-                SkippedStep step = new SkippedStep("Code analysis", "Its a non mainline branch (not Master or Trunk) so not doing Sonar or NexusIQ")
-                pipelineSummary.addStep(step)
-            }
-        } finally {
-            stage('Summary') {
-                pipelineSummary.createSummaryHtml()
-                publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: true, reportDir: 'pipelineSummary', reportFiles: 'index.html', reportName: 'Pipeline Summary'])
-            }
-            stage('CleanUp') {
-                step([$class: 'WsCleanup', notFailBuild: true])
-            }
-        }
-    }
+					String version = mavenBuild.mavenBuild(mavenBuildInfo.pom)
+					//TODO: Add summary report
+
+					if (mavenBuildInfo.builderCredentialsId && scmType == 'git') { // Check if other tag pushing supported
+						//git.pushTagToRepo(tagName, mavenBuildInfo.builderCredentialsId) //currently failing
+						//TODO: Add summary report
+					} else {
+						println "****WARNING*******: Did not find env.builderCredentialsId, cannot push tag!"
+						//TODO: Add summary report
+					}
+				} else { // Non-Mainline
+					mavenBuild.mavenBranchBuild()
+					//TODO: Add summary report
+				}
+
+			}
+
+			if (javaPipelineInfo.isMainlineBuild) {
+				stage('Sonar') {
+					
+					println "running sonar"
+					withSonarQubeEnv(mavenBuildInfo.sonarInstallation) {  //hard coded
+						maven.mvn("sonar:sonar -Dsonar.links.ci=${env.BUILD_URL}")
+					}
+					//SonarQube sonarQube = new SonarQube(this)
+					//sonarQube.sonarAnalysis(mavenBuildInfo, utilities, maven)
+				}
+
+				stage('Quality Gate') {
+					timeout(time: 300, unit: 'SECONDS') {
+
+						def qualitygate = waitForQualityGate()
+						if (qualitygate.status != "OK") {
+							error "Pipeline aborted due to quality gate coverage failure: ${qualitygate.status}"
+						}
+					}
+				}
+			}
+
+
+		}finally {
+			//TODO: Call Publish Summery Report
+			println "finally"
+			//stage('CleanUp') {
+			//    step([$class: 'WsCleanup', notFailBuild: true])
+			//}
+		}
+
+	}
 }
 
 MavenBuildInfo processJenkinsProperties(Utilities util, String propsFileName) {
-    def jenkinsProperties
-    timeout(time: 10, unit: 'SECONDS') {
-        jenkinsProperties = readProperties file: propsFileName
-    }
+	def jenkinsProperties
+	timeout(time: 10, unit: 'SECONDS') {
+		println "going to read file"
+		jenkinsProperties = readProperties file: propsFileName //Need PipeLine Util plugin for readProperties
+		println "read file"
+	}
 
-    MavenBuildInfo buildInfo = new MavenBuildInfo()
-    buildInfo.deployable = util.getPropertyOrDefault(jenkinsProperties, 'deployable', 'false')
-    buildInfo.jdkVersion = util.getPropertyOrDefault(jenkinsProperties, 'jdkVersion', '1.7')
-    buildInfo.mavenVersion = util.getPropertyOrDefault(jenkinsProperties, 'mavenVersion', '3.3.3')
-    buildInfo.buildTargets = util.getPropertyOrDefault(jenkinsProperties, 'buildTargets', '')
-    if (util.getPropertyOrDefault(jenkinsProperties, 'publishJavaDoc', 'false') == 'true') {
-        buildInfo.publishJavaDoc = true
-    }
-    buildInfo.javaDocBuildTargets = util.getPropertyOrDefault(jenkinsProperties, 'javaDocBuildTargets', '')
-    buildInfo.javaDocFolder = util.getPropertyOrDefault(jenkinsProperties, 'javaDocFolder', 'target/site')
-    if (util.getPropertyOrDefault(jenkinsProperties, 'publishJUnit', 'false') == 'true') {
-        buildInfo.publishJUnit = true
-    }
-    buildInfo.snapshotDeployTarget = util.getPropertyOrDefault(jenkinsProperties, 'snapshotDeployTarget', '')
-    if (util.getPropertyOrDefault(jenkinsProperties, 'archiveFiles', 'false') == 'true') {
-        buildInfo.archiveFiles = true
-    }
-    buildInfo.archiveFilesSet = util.getPropertyOrDefault(jenkinsProperties, 'archiveFilesSet', '')
-    buildInfo.sonarSkipModules = util.getPropertyOrDefault(jenkinsProperties, 'sonarSkipModules', ';')
-    buildInfo.applicationCode = jenkinsProperties.applicationCode
-    if (util.getPropertyOrDefault(jenkinsProperties, 'settingsXmlInWorkspace', 'false') == 'true') {
-        buildInfo.settingsXmlInWorkspace = true
-    }
-    buildInfo.copySettingsXmlFromJob = util.getPropertyOrDefault(jenkinsProperties, 'copySettingsXmlFromJob', 'false')1
+	println "properties are read file"
+	MavenBuildInfo buildInfo = new MavenBuildInfo()
+	buildInfo.deployable = util.getPropertyOrDefault(jenkinsProperties, 'deployable', 'false')
+	buildInfo.jdkVersion = util.getPropertyOrDefault(jenkinsProperties, 'jdkVersion', '1.7')
+	buildInfo.mavenVersion = util.getPropertyOrDefault(jenkinsProperties, 'mavenVersion', '3.3.3')
+	buildInfo.buildTargets = util.getPropertyOrDefault(jenkinsProperties, 'buildTargets', '')
+	if (util.getPropertyOrDefault(jenkinsProperties, 'publishJavaDoc', 'false') == 'true') {
+		buildInfo.publishJavaDoc = true
+	}
+	buildInfo.javaDocBuildTargets = util.getPropertyOrDefault(jenkinsProperties, 'javaDocBuildTargets', '')
+	buildInfo.javaDocFolder = util.getPropertyOrDefault(jenkinsProperties, 'javaDocFolder', 'target/site')
+	if (util.getPropertyOrDefault(jenkinsProperties, 'publishJUnit', 'false') == 'true') {
+		buildInfo.publishJUnit = true
+	}
+	buildInfo.snapshotDeployTarget = util.getPropertyOrDefault(jenkinsProperties, 'snapshotDeployTarget', '')
+	if (util.getPropertyOrDefault(jenkinsProperties, 'archiveFiles', 'false') == 'true') {
+		buildInfo.archiveFiles = true
+	}
+	buildInfo.archiveFilesSet = util.getPropertyOrDefault(jenkinsProperties, 'archiveFilesSet', '')
+	buildInfo.sonarSkipModules = util.getPropertyOrDefault(jenkinsProperties, 'sonarSkipModules', ';')
+	buildInfo.applicationCode = jenkinsProperties.applicationCode
+	if (util.getPropertyOrDefault(jenkinsProperties, 'settingsXmlInWorkspace', 'false') == 'true') {
+		buildInfo.settingsXmlInWorkspace = true
+	}
+	buildInfo.copySettingsXmlFromJob = util.getPropertyOrDefault(jenkinsProperties, 'copySettingsXmlFromJob', 'false')
 
-    buildInfo.sonarInstallation = util.getPropertyOrDefault(jenkinsProperties, 'sonarInstallation', '')
-    if (util.getPropertyOrDefault(jenkinsProperties, 'sonarQubeWithRunner', 'false') == 'true') {
-        buildInfo.sonarQubeWithRunner = true
-    }
+	buildInfo.sonarInstallation = util.getPropertyOrDefault(jenkinsProperties, 'sonarInstallation', 'sonarqube')
+	if (util.getPropertyOrDefault(jenkinsProperties, 'sonarQubeWithRunner', 'false') == 'true') {
+		buildInfo.sonarQubeWithRunner = true
+	}else {
+		buildInfo.sonarQubeWithRunner = false
+	}
 
-    buildInfo.mavenMirrorUrl = util.getPropertyOrDefault(mavenMirrorUrl, 'mavenMirrorUrl', '')
+	buildInfo.mavenMirrorUrl = util.getPropertyOrDefault(jenkinsProperties, 'mavenMirrorUrl', '')
 
-    buildInfo.builderCredentialsId = util.getPropertyOrDefault(jenkinsProperties, 'builderCredentialsId', 'false')
-    return buildInfo
+	buildInfo.builderCredentialsId = util.getPropertyOrDefault(jenkinsProperties, 'builderCredentialsId', 'false')
+	return buildInfo
 }
