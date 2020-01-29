@@ -1,4 +1,4 @@
-def call(Map config, boolean check = false) {
+def call(config = [:], boolean check = false) {
 switch(config.step){
 case "clean":
 sh 'mvn clean'
