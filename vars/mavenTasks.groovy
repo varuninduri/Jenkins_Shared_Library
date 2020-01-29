@@ -1,4 +1,4 @@
-def call(Map config, boolean testreport = flase, boolean coveragereport = flase) {
+def call(Map config) {
 if(config.step == "clean"){
 	sh 'mvn clean'
 	}
