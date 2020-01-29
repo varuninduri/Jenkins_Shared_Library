@@ -22,15 +22,7 @@ else if(config.step == "coverage"){
 	}
 	}
 else if(config.step == "package"){
-	if(config.typeBuild=="jar"){
 	sh 'mvn package'
-	}
-	else if(config.typeBuild=="war"){
-	sh 'mvn war:war'
-	}
-	else{
-	echo "please define type of Build with param typeBuild"
-	}
 	}
 else{
 	echo "please configure maven steps"
