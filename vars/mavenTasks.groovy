@@ -10,6 +10,7 @@ else if(config.step == "sonar"){
 	}
 else if(config.step == "test"){
 	sh 'mvn test'
+	echo typeof(testreport)
 	if(testreport==true){
 	junit 'target/surefire-reports/*.xml'	
 	}
