@@ -1,22 +1,30 @@
-def call(config = [:], boolean check = false) {
-switch(config.step){
-case "clean":
-sh 'mvn clean'
-break
-case "compile":
-sh 'mvn compile'
-break
-case "sonar":
-sh 'mvn sonar:sonar'
-break
-case "test":
-sh 'mvn test'
-break
-case "coverage":
-sh 'mvn cobertura:cobertura'
-break
-case "package":
-sh 'mvn package'
-break
-}
+def call(Map config, boolean check = false) {
+if(config.step == "clean"){
+	sh 'mvn clean'
+	}
+else if(config.step == "compile"){
+	sh 'mvn compile'
+	}
+else if(config.step == "sonar"){
+	sh 'mvn sonar:sonar'
+	}
+else if(config.step == "test"){
+	sh 'mvn test'
+	
+	if(config.testreport!=check){
+	junit 'target/surefire-reports/*.xml'	
+	}
+	}
+else if(config.step == "coverage"){
+	sh 'mvn cobertura:cobertura'
+	if(config.coveragereport!=check){
+	cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: 'target/site/cobertura/coverage.xml', conditionalCoverageTargets: '70, 0, 0', failUnhealthy: false, failUnstable: false, lineCoverageTargets: '80, 0, 0', maxNumberOfBuilds: 0, methodCoverageTargets: '80, 0, 0', onlyStable: false, sourceEncoding: 'ASCII', zoomCoverageChart: false
+	}
+	}
+else if(config.step == "package"){
+	sh 'mvn --settings /home/indurivarun/artifactorysettings.xml package'
+	}
+else{
+	echo "please configure maven steps"
+	}	
 }
