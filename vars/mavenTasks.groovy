@@ -16,7 +16,7 @@ else if(config.step == "test"){
 	}
 else if(config.step == "coverage"){
 	sh 'mvn cobertura:cobertura'
-	if(config.testreport==true){
+	if(config.coveragereport==true){
 	cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: 'target/site/cobertura/coverage.xml', conditionalCoverageTargets: '70, 0, 0', failUnhealthy: false, failUnstable: false, lineCoverageTargets: '80, 0, 0', maxNumberOfBuilds: 0, methodCoverageTargets: '80, 0, 0', onlyStable: false, sourceEncoding: 'ASCII', zoomCoverageChart: false
 	}
 	}
