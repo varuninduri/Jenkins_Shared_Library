@@ -1,8 +1,16 @@
 def call(Map config, boolean check = false) {
 if(config.step == "clean"){
+	if (config.containsKey("pomlocation")){
+		def pomxmllocation = config.get("pomlocation")
+		sh 'mvn -f pomxmllocation compile'
+	}
 	sh 'mvn clean'
 	}
-else if(config.step == "compile"){	
+else if(config.step == "compile"){
+	if (config.containsKey("pomlocation")){
+		def pomxmllocation = config.get("pomlocation")
+		sh 'mvn -f pomxmllocation compile'
+	}
 	sh 'mvn compile'
 	}
 else if(config.step == "sonar"){
