@@ -12,7 +12,7 @@ else if(config.step == "compile"){
 		def pomxmllocation = config.get("pomlocation")
 		sh 'mvn -f pomxmllocation compile'
 	}
-	sh 'mvn compile'
+	sh 'mvn -f SchedulerDemo/pom.xml compile'
 	}
 else if(config.step == "sonar"){
 	sh 'mvn sonar:sonar'
