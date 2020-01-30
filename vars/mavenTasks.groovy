@@ -1,8 +1,11 @@
 def call(Map config, boolean check = false) {
 if(config.step == "clean"){
-	sh 'cd SchedulerDemo'
-	sh 'pwd'
-	sh 'ls'
+	def call(String pomloc){
+		if(pomloc == "SchedulerDemo/pom.xml"){
+			println pomloc
+			sh 'mvn -f ${pomloc} clean'
+		}
+	}
 	sh 'mvn clean'
 	}
 else if(config.step == "compile"){
