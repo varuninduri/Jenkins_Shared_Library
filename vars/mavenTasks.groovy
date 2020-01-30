@@ -2,7 +2,7 @@ def call(Map config, boolean check = false) {
 if(config.step == "clean"){
 	sh 'mvn clean'
 	}
-else if(config.step == "compile"){
+else if(config.step == "compile"){	
 	sh 'mvn compile'
 	}
 else if(config.step == "sonar"){
