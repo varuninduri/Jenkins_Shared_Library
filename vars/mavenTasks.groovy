@@ -5,7 +5,7 @@ if(config.step == "clean"){
 		echo pomxmllocation
 		sh 'mvn -f SchedulerDemo/pom.xml compile'
 	}
-	def pomxmllocation = config.get("pomlocation")
+	def pomxmllocation = config.get("step")
 	println "${pomxmllocation}"
 	sh 'mvn -f ${pomxmllocation} clean'
 	}
