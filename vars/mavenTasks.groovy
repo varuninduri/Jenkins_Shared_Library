@@ -1,6 +1,8 @@
 def call(Map config, boolean check = false) {
 if(config.step == "clean"){
 	sh 'cd SchedulerDemo'
+	sh 'pwd'
+	sh 'ls'
 	sh 'mvn clean'
 	}
 else if(config.step == "compile"){
