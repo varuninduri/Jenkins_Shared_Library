@@ -3,7 +3,7 @@ if(config.step == "clean"){
 	if (config.containsKey("pomlocation")){
 		def pomxmllocation = config.get("pomlocation")
 		echo pomxmllocation
-		sh 'mvn -f pomxmllocation compile'
+		sh 'mvn -f -f SchedulerDemo/pom.xml compile'
 	}
 	sh 'mvn clean'
 	}
