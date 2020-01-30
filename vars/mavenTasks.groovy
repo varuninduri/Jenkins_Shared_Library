@@ -5,14 +5,14 @@ if(config.step == "clean"){
 		echo pomxmllocation
 		sh 'mvn -f SchedulerDemo/pom.xml compile'
 	}
-	sh 'mvn clean'
+	sh 'mvn -f "pomxmllocation" clean'
 	}
 else if(config.step == "compile"){
 	if (config.containsKey("pomlocation")){
 		def pomxmllocation = config.get("pomlocation")
 		sh 'mvn -f pomxmllocation compile'
 	}
-	sh 'mvn -f SchedulerDemo/pom.xml compile'
+	sh 'mvn -f "pomxmllocation" compile'
 	}
 else if(config.step == "sonar"){
 	sh 'mvn sonar:sonar'
