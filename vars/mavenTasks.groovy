@@ -22,7 +22,7 @@ else if(config.step == "coverage"){
 	}
 	}
 else if(config.step == "package"){
-	sh 'mvn --settings /root/artifactorysettings.xml package'
+	sh 'mvn package'
 	}
 else{
 	echo "please configure maven steps"
