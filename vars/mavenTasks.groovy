@@ -2,6 +2,7 @@ def call(Map config, boolean check = false) {
 if(config.step == "clean"){
 	if (config.containsKey("pomlocation")){
 		def pomxmllocation = config.get("pomlocation")
+		echo pomxmllocation
 		sh 'mvn -f pomxmllocation compile'
 	}
 	sh 'mvn clean'
