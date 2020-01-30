@@ -24,6 +24,9 @@ else if(config.step == "coverage"){
 else if(config.step == "package"){
 	sh 'mvn package'
 	}
+else if(config.step == "artifactory"){
+	sh 'mvn deploy'
+	}	
 else{
 	echo "please configure maven steps"
 	}	
