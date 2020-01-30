@@ -1,11 +1,11 @@
 def call(Map config, boolean check = false) {
 if(config.step == "clean"){
-	if (config.containsKey("pomlocation")){
+	if (config.pomlocation == "SchedulerDemo/pom.xml"){
 		def pomxmllocation = config.get("pomlocation")
 		echo pomxmllocation
 		sh 'mvn -f SchedulerDemo/pom.xml compile'
 	}
-	sh 'mvn -f SchedulerDemo/pom.xml clean'
+	sh 'mvn clean'
 	}
 else if(config.step == "compile"){
 	if (config.containsKey("pomlocation")){
