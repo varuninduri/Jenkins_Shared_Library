@@ -6,8 +6,10 @@ else if(config.step == "compile"){
 	sh 'mvn compile'
 	}
 else if(config.step == "sonar"){
+	withSonarQubeEnv('sonar'){
 	sh 'mvn sonar:sonar'
 	}
+}
 else if(config.step == "test"){
 	sh 'mvn test'
 	
