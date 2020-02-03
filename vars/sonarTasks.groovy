@@ -1,5 +1,6 @@
 def call(Map config, boolean quality = false) {
     println "printing sonarserver"+config.sonarserver
+    println (config.qualitycheck.getClass())
     def value = config.qualitycheck.toBoolean()
     println (value instanceof boolean)
     withSonarQubeEnv('sonar') {
