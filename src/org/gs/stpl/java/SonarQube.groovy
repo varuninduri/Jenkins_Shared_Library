@@ -1,19 +1,13 @@
 package org.gs.stpl.java
 
-import org.gs.stpl.util.Utilities
-import org.gs.stpl.util.Maven
-import org.gs.stpl.java.model.MavenBuildInfo
+import org.gs.stpl.util.Sonar
 
 /**
  * Class for SonarQube actions for the JavaPipeline.
  */
 class SonarQube implements Serializable {
 
-    def steps
-
-    SonarQube(steps) {
-        this.steps = steps
-    }
+    
 
     /**
      * Execute a Sonar Analysis for this application. <br>
@@ -22,58 +16,27 @@ class SonarQube implements Serializable {
      * @param sonarSkipModules a semi-colon separated list of maven modules that should not be analysed
      * @param util Utilities class
      */
-    void sonarAnalysis(MavenBuildInfo mavenBuildInfo, Utilities util, Maven maven) {
-        assert mavenBuildInfo.pom: 'Pom data is not present!'
-        assert mavenBuildInfo.sonarSkipModules: 'sonarSkipModules data is not present!'
-        //assert mavenBuildInfo.sonarQubeWithRunner: 'sonarQubeWithRunner data is not present!' //Removed assert
-        assert util: 'Utilities class is not present!'
-		
-		String sonarInstallation = "sonarqube"
-
-        if (!mavenBuildInfo.sonarQubeWithRunner) {
-			//withSonarQubeEnv("${mavenBuildInfo.sonarInstallation}") {
-			println "running sonar"
-            withSonarQubeEnv(sonarInstallation) {  //hard coded
-                maven.mvn("sonar:sonar -Dsonar.links.ci=${env.BUILD_URL}")
-            }
-        } else {
-
-            def sonarQubeRunner
-            if (steps.isUnix()) {
-                sonarQubeRunner = steps.tool name: 'Linux sonar-runner-2.4', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-            } else {
-                sonarQubeRunner = steps.tool name: 'sonar-runner-2.4', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-            }
-
-            def modules = pom.modules
-            def sourcesList = ""
-            def moduleCount = 0
-            for (module in modules) {
-                if (!util.splittedStringContainsValue(sonarSkipModules, ';', module)) {
-                    if (moduleCount > 0) {
-                        sourcesList += ", "
-                    }
-                    moduleCount++
-                    sourcesList += "${module}/src/main/java"
-                }
-            }
-
-            def sonarPropertiesFile = 'sonar-project.properties'
-            steps.writeFile encoding: 'UTF-8', file: sonarPropertiesFile, text: """
-            sonar.projectKey=$pom.groupId:$pom.artifactId
-            sonar.projectName=$pom.name
-            sonar.projectVersion=$pom.version
-            sonar.sources=$sourcesList
-            """
-            try {
-                if (steps.isUnix()) {
-                    steps.sh "$sonarQubeRunner/bin/sonar-runner -e"
-                } else {
-                    steps.bat "$sonarQubeRunner\\bin\\sonar-runner.bat -e"
-                }
-            } finally {
-                steps.archive sonarPropertiesFile
-            }
-        }
+    void sonarAnalysis(Sonar sonar) {
+        assert sonar.sonarTool: 'Tool is not present!'
+        assert sonar.qualityGate: 'Quality gate is not present!'
+        
+        def sonarInstallation = sonar.sonarTool
+	boolean qualityCheck = sonar.qualityGate    
+      
+	println "running sonar"
+        withSonarQubeEnv(sonarInstallation) {
+        sh 'mvn sonar:sonar'
+    } // SonarQube taskId is automatically attached to the pipeline context
+  if (qualityCheck==true){
+stage("Quality Gate"){
+    timeout(time: 1, unit: 'HOURS') { // Just in case something goes wrong, pipeline will be killed after a timeout
+    def qg = waitForQualityGate() // Reuse taskId previously collected by withSonarQubeEnv
+    if (qg.status != 'OK') {
+        error "Pipeline aborted due to quality gate failure: ${qg.status}"
+    }
+  }
+}
+  }
+                
     }
 }
