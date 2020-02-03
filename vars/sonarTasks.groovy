@@ -1,9 +1,8 @@
 def call(Map config, boolean check = false) {
-stage('SonarQube analysis') {
+    println "printing sonarserver"+config.sonarserver
     withSonarQubeEnv('config.sonarserver') {
         sh 'mvn sonar:sonar'
     } // SonarQube taskId is automatically attached to the pipeline context
-  }
   if (config.qualitycheck!=check){
 stage("Quality Gate"){
     timeout(time: 1, unit: 'HOURS') { // Just in case something goes wrong, pipeline will be killed after a timeout
