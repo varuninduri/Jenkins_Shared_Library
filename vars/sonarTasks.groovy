@@ -5,5 +5,5 @@ def call(String sonarTool, boolean qualityGate) {
  SonarQube sonarqube
  sonarTool = sonar.sonarTool
  qualityGate = sonar.qualityGate
-  sonarqube.sonarAnalysis(Sonar sonar)  
+  sonarqube.sonarAnalysis(sonar)  
 }
