@@ -1,4 +1,4 @@
-def call(Map config, boolean check = false) {
+def call(Map config, boolean check = true) {
     println "printing sonarserver"+config.sonarserver
     withSonarQubeEnv('sonar') {
         sh 'mvn sonar:sonar'
