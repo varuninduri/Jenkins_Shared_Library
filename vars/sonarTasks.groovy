@@ -1,5 +1,6 @@
 def call(Map config, boolean quality = false) {
     println "printing sonarserver"+config.sonarserver
+    println (config.qualitycheck instanceof boolean)
     withSonarQubeEnv('sonar') {
         sh 'mvn sonar:sonar'
     } // SonarQube taskId is automatically attached to the pipeline context
