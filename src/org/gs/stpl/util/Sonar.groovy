@@ -6,7 +6,7 @@ package org.gs.stpl.util
 class Sonar implements Serializable {
 
     String sonarTool
-    String qualityGate
+    boolean qualityGate
 
     /**
      * Creates a new Maven utility class.
