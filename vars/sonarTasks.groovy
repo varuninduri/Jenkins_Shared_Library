@@ -1,4 +1,4 @@
-def call(Map config, Map quality) {
+def call(Map config) {
     println (qualitygate instanceof boolean)
     println qualitygate
     withSonarQubeEnv('sonar') {
