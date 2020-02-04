@@ -13,7 +13,7 @@ import org.gs.stpl.util.Sonar
 }*/
 def call(Map tool) {
 	println tool.sonarTool
-	println tool.qualityGate instanceof boolean
+	println tool.qualityGate instanceof Boolean
 	println tool.qualityGate.getClass()
 	withSonarQubeEnv(tool.sonarTool){
         sh 'mvn sonar:sonar'
