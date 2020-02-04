@@ -16,7 +16,7 @@ class SonarQube implements Serializable {
      * @param sonarSkipModules a semi-colon separated list of maven modules that should not be analysed
      * @param util Utilities class
      */
-    void sonarAnalysis(Sonar sonar) {
+    /*void sonarAnalysis(Sonar sonar) {
         assert sonar.sonarTool: 'Tool is not present!'
         assert sonar.qualityGate: 'Quality gate is not present!'
         
@@ -38,5 +38,11 @@ stage("Quality Gate"){
 }
   }
                 
-    }
+    }*/
+	void sonarAnalysis() {
+		println "running sonar"
+        withSonarQubeEnv('sonar') {
+        sh 'mvn sonar:sonar'
+    } // SonarQube taskId is automatically attached to the pipeline context
+	}
 }
