@@ -12,6 +12,10 @@ import org.gs.stpl.util.Sonar
 }
 }*/
 def call() {
-	SonarQube sonarqube
+	SonarQube sonarqube 
+	if(sonarqube==null)
+	{
+		println("ksfhdhf")
+	}
   sonarqube.sonarAnalysis()
 }
