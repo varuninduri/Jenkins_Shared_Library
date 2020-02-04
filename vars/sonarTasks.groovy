@@ -11,9 +11,8 @@ import org.gs.stpl.util.Sonar
   sonarqube.sonarAnalysis(sonar)  
 }
 }*/
-def call() {
-	SonarQube sonarqube = new SonarQube()
-	withSonarQubeEnv('sonar'){
-  sonarqube.sonarAnalysis()
+def sonarTasks(String sonarTool) {
+	withSonarQubeEnv(sonarTool){
+        sh 'mvn sonar:sonar'
 }
 }
