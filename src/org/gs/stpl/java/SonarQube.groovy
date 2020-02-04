@@ -41,8 +41,10 @@ stage("Quality Gate"){
     }*/
 	def sonarAnalysis() {
 		println "running sonar"
+		steps{
         withSonarQubeEnv('sonar') {
         sh 'mvn sonar:sonar'
     } // SonarQube taskId is automatically attached to the pipeline context
+	}
 	}
 }
