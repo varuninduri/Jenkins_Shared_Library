@@ -39,7 +39,7 @@ stage("Quality Gate"){
   }
                 
     }*/
-	void sonarAnalysis() {
+	def sonarAnalysis() {
 		println "running sonar"
         withSonarQubeEnv('sonar') {
         sh 'mvn sonar:sonar'
