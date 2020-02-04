@@ -12,6 +12,8 @@ import org.gs.stpl.util.Sonar
 }
 }*/
 def call(Map tool) {
+	println tool.sonarTool
+	println tool.qualityGate
 	withSonarQubeEnv(tool.sonarTool){
         sh 'mvn sonar:sonar'
 }
