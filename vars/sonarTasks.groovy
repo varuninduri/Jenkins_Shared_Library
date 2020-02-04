@@ -13,6 +13,7 @@ import org.gs.stpl.util.Sonar
 }*/
 def call() {
 	SonarQube sonarqube 
+	println("out of if")
 	if(sonarqube==null)
 	{
 		println("ksfhdhf")
