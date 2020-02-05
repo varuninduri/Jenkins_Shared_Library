@@ -16,7 +16,7 @@
     server.publishBuildInfo buildInfo
     }*/
        
-
+def call(){
        stage ('Artifactory configuration') {
             steps {
                 rtServer (
@@ -58,4 +58,4 @@
                 )
             }
         }
-
+}
