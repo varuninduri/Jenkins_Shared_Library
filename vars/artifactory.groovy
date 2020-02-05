@@ -32,7 +32,7 @@ def call(){
 
                 rtMavenResolver (
                     id: "MAVEN_RESOLVER",
-                    serverId: "ARTIFACTORY_SERVER",
+                    serverId: "Jfrog_artifactory",
                     releaseRepo: "libs-release",
                     snapshotRepo: "libs-snapshot"
                 )
