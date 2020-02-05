@@ -16,23 +16,23 @@
     server.publishBuildInfo buildInfo
     }*/
        
-def call(){
+def call(Map conf){
        stage ('Artifactory configuration') {
             
                 rtServer (
-                    id: "Jfrog_artifactory"
+                    id: conf.artifactoryId
                 )
 
                 rtMavenDeployer (
                     id: "MAVEN_DEPLOYER",
-                    serverId: "Jfrog_artifactory",
+                    serverId: conf.artifactoryId,
                     releaseRepo: "libs-release-local",
                     snapshotRepo: "libs-snapshot-local"
                 )
 
                 rtMavenResolver (
                     id: "MAVEN_RESOLVER",
-                    serverId: "Jfrog_artifactory",
+                    serverId: conf.artifactoryId,
                     releaseRepo: "libs-release",
                     snapshotRepo: "libs-snapshot"
                 )
@@ -42,7 +42,7 @@ def call(){
         stage ('Exec Maven') {
             
                 rtMavenRun (
-                    tool: 'maven-3.5.4', // Tool name from Jenkins configuration
+                    tool: conf.mavenId, // Tool name from Jenkins configuration
                     pom: 'pom.xml',
                     goals: 'clean install',
                     deployerId: "MAVEN_DEPLOYER",
@@ -54,7 +54,7 @@ def call(){
         stage ('Publish build info') {
             
                 rtPublishBuildInfo (
-                    serverId: "Jfrog_artifactory"
+                    serverId: conf.artifactoryId
                 )
             }
         
