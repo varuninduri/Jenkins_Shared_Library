@@ -18,7 +18,7 @@
        
 def call(){
        stage ('Artifactory configuration') {
-            steps {
+            
                 rtServer (
                     id: "Jfrog_artifactory"
                 )
@@ -36,11 +36,11 @@ def call(){
                     releaseRepo: "libs-release",
                     snapshotRepo: "libs-snapshot"
                 )
-            }
+            
         }
 
         stage ('Exec Maven') {
-            steps {
+            
                 rtMavenRun (
                     tool: 'maven-3.5.4', // Tool name from Jenkins configuration
                     pom: 'pom.xml',
@@ -48,14 +48,14 @@ def call(){
                     deployerId: "MAVEN_DEPLOYER",
                     resolverId: "MAVEN_RESOLVER"
                 )
-            }
+            
         }
 
         stage ('Publish build info') {
-            steps {
+            
                 rtPublishBuildInfo (
                     serverId: "Jfrog_artifactory"
                 )
             }
-        }
+        
 }
