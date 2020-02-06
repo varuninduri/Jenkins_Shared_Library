@@ -24,7 +24,7 @@ else if(config.step == "coverage"){
 	}
 	}
 else if(config.step == "package"){
-	sh 'mvn versions:set -DnewVersion=1.0.${env.BUILD_NUMBER}'
+	sh "mvn versions:set -DnewVersion=1.0.${env.BUILD_NUMBER}"
 	sh 'mvn package'
 	}
 else if(config.step == "artifactory"){
