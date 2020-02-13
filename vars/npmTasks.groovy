@@ -1,5 +1,5 @@
 def call(Map config, boolean check = false) {
 if(config.step == "install"){
-	sh 'npm -v'
+	sh 'npm install'
 	}
   }
